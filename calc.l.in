@@ -1,0 +1,9 @@
+%{
+@PLY_HOOKS_DECL@ 
+%}
+
+%%
+%%
+@PLY_HOOKS_PROC@
+
+@YYWRAP@
