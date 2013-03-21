@@ -7,9 +7,9 @@ ALPHANUM [a-zA-Z_0-9]
 DIG [0-9]
 SPEC [-()+/=]
 %%
-{ALPHA}{ALPHANUM}*	{glexpos += strlen(yytext); return TOK_S("NAME",yytext); }
-{DIG}+			{glexpos += strlen(yytext); return TOK_L("NUMBER",atol(yytext)); }
-{SPEC}			{glexpos++; return specfilter(yytext); }
+{ALPHA}{ALPHANUM}*	RTN_S("NAME",yytext);
+{DIG}+			RTN_L("NUMBER",atol(yytext)); 
+{SPEC}			{PyObject *t=specfilter(yytext); glexpos++; return t; }
 \n			{glineno++; glexpos++; }
 .			{glexpos++;}
 <<EOF>>			{return TOK_EOF;}
@@ -45,7 +45,3 @@ specfilter(char *c)
 
 @YYWRAP@
 
-/* Notes:
-   * Updating glexpos before calling buildToken() means that lexpos points
-     to the end, not the start of the token.
-*/

@@ -59,6 +59,11 @@ static long glexpos = 0;
 #define TOK_C(N,C) buildToken(glineno, glexpos, N, "c", C)
 #define TOK_D(N,D) buildToken(glineno, glexpos, N, "d", D)
 #define TOK_EOF buildToken(glineno, glexpos, NULL, NULL)
+#define RTN(N) {PyObject *t=TOK(N); glexpos+=strlen(yytext); return t;}
+#define RTN_L(N,L) {PyObject *t=TOK_L(N,L); glexpos+=strlen(yytext); return t;}
+#define RTN_S(N,S) {PyObject *t=TOK_S(N,S); glexpos+=strlen(yytext); return t;}
+#define RTN_C(N,C) {PyObject *t=TOK_C(N,C); glexpos+=strlen(yytext); return t;}
+#define RTN_D(N,D) {PyObject *t=TOK_D(N,D); glexpos+=strlen(yytext); return t;}
 /* End phlex */
 
 ''')
