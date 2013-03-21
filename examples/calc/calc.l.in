@@ -37,7 +37,10 @@ specfilter(char *c)
         name = "DIVIDE";
         break;
     case '*':
-        name = "MULT";
+        name = "TIMES";
+        break;
+    case '=':
+        name = "EQUALS";
         break;
     }
     return TOK_S(name, c);
