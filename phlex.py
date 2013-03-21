@@ -209,7 +209,7 @@ error:
 
 def put_yywrap(f, trigger):
     f.write('/* From phlex ' + trigger + ' */\n');
-    f.write('static int yywrap() {return 1;}\n/* End phlex */\n')
+    f.write('int yywrap() {return 1;}\n/* End phlex */\n')
     
 def put_setup(f, extname):
     f.write('\n'.join([
