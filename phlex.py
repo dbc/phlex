@@ -46,13 +46,14 @@ def processArgs():
 
 # Write the declarations section boiler plate. 
 def put_decls(f, trigger):
+    "Write the phlex declarations that live between %{ and %} in the .l file."
     f.write('/* From phlex ' + trigger + ' */\n')
     f.write(
 '''#define YY_DECL static PyObject* yylex (void)
 static PyObject *token_cls; /* Caches lookup of the Class LexToken(object). */
 static PyObject *buildToken(long lineno, long lexpos, char *tokentype,
     char *format, ...);
-static long glineno = 0;
+static long glineno = 1;
 static long glexpos = 0;
 #define TOK(N) buildToken(glineno, glexpos, N, NULL)
 #define TOK_L(N,L) buildToken(glineno, glexpos, N, "l", L)
@@ -60,17 +61,17 @@ static long glexpos = 0;
 #define TOK_C(N,C) buildToken(glineno, glexpos, N, "c", C)
 #define TOK_D(N,D) buildToken(glineno, glexpos, N, "d", D)
 #define TOK_EOF buildToken(glineno, glexpos, NULL, NULL)
+#define RTN(N) {PyObject *t=TOK(N); glexpos+=strlen(yytext); return t;}
+#define RTN_L(N,L) {PyObject *t=TOK_L(N,L); glexpos+=strlen(yytext); return t;}
+#define RTN_S(N,S) {PyObject *t=TOK_S(N,S); glexpos+=strlen(yytext); return t;}
+#define RTN_C(N,C) {PyObject *t=TOK_C(N,C); glexpos+=strlen(yytext); return t;}
+#define RTN_D(N,D) {PyObject *t=TOK_D(N,D); glexpos+=strlen(yytext); return t;}
 /* End phlex */
 
 ''')
 
-
-# Do reference counts need to be incremented on the import??
-
-# NULL is error return from Py_<builder> calls.  Need to tweak
-# buildToken() function to handle that better.
-
 def put_funcs(f, trigger, extName, tokenModule):
+    "Write the C functions that live in section 3 of the .l file."
     f.write('/* From phlex ' + trigger + ' */\n');
     
     f.write(
@@ -208,10 +209,12 @@ error:
     f.write('/* End phlex */\n')
 
 def put_yywrap(f, trigger):
+    "Write a simple yywrap() function."
     f.write('/* From phlex ' + trigger + ' */\n');
     f.write('int yywrap() {return 1;}\n/* End phlex */\n')
     
 def put_setup(f, extname):
+    "Write a setup.py file specific for building this lexer."
     f.write('\n'.join([
 'from distutils.core import setup, Extension',
 '',

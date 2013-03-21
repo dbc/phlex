@@ -5,23 +5,39 @@ PyObject* specfilter(char *c);
 ALPHA [a-zA-Z_]
 ALPHANUM [a-zA-Z_0-9]
 DIG [0-9]
-SPEC [-()+(/=]
+SPEC [-()+/=]
 %%
-{ALPHA}{ALPHANUM}*	{glexpos += strlen(yytext); return TOK_S("NAME",yytext); }
-{DIG}+			{glexpos += strlen(yytext); return TOK_L("NUMBER",atol(yytext)); }
-{SPEC}			{glexpos++; return specfilter(yytext); }
+{ALPHA}{ALPHANUM}*	RTN_S("NAME",yytext);
+{DIG}+			RTN_L("NUMBER",atol(yytext)); 
+{SPEC}			{PyObject *t=specfilter(yytext); glexpos++; return t; }
 \n			{glineno++; glexpos++; }
 .			{glexpos++;}
+<<EOF>>			{return TOK_EOF;}
 %%
 @PLY_HOOKS_PROC@
 
 PyObject*
 specfilter(char *c)
 {
-    char *name;
+    char *name = NULL;
     switch (c[0]) {
     case '(':
         name = "LPAREN";
+        break;
+    case ')':
+        name = "RPAREN";
+        break;
+    case '-':
+        name = "MINUS";
+        break;
+    case '+':
+        name = "PLUS";
+        break;
+    case '/':
+        name = "DIVIDE";
+        break;
+    case '*':
+        name = "MULT";
         break;
     }
     return TOK_S(name, c);
@@ -29,7 +45,3 @@ specfilter(char *c)
 
 @YYWRAP@
 
-/* Notes:
-   * Updating glexpos before calling buildToken() means that lexpos points
-     to the end, not the start of the token.
-*/

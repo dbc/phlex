@@ -1,0 +1,15 @@
+Simple test of phlex.  Intended to be a drop-in replacement
+for the lexer in Dave Beazley's calc example for the ply
+module.  
+
+To build and test calclex:
+____ ../../phlex.py --setup -e calclex calc.l.in
+____ flex calc.l
+     ____ if running standard flex, edit lex.yy.c
+          to add #include <Python.h> at the top.
+          See skel/README for how to patch flex
+          to avoid the hand-editing step.
+____ python setup.py build
+____ sudo python setup.py install
+____ python testcalc.py
+      
