@@ -26,7 +26,7 @@ import argparse
 def processArgs():
     global args
     ap = argparse.ArgumentParser()
-    ap.add_argument('filename', 
+    ap.add_argument('filename',
         help='File name in the form name.l.in, name.l is produced.')
     ap.add_argument('--extension-name','-e', type=str, 
         action='store',required=True, dest='extensionname',
@@ -34,6 +34,8 @@ def processArgs():
     ap.add_argument('--token-mod','-m', type=str, default='ply.lex', 
         action='store', dest='tokenmod',
         help='Name of Python module defining LexToken.')
+    ap.add_argument('--setup', '-S', action='store_true', 
+        help='Generate setup.py file.')
     args = ap.parse_args()
     l = args.filename.split('.')
     if l[-1] != 'in':
@@ -207,6 +209,20 @@ def put_yywrap(f, trigger):
     f.write('/* From phlex ' + trigger + ' */\n');
     f.write('int yywrap() {return 1;}\n/* End phlex */\n')
     
+def put_setup(f, extname):
+    f.write('\n'.join([
+'from distutils.core import setup, Extension',
+'',
+"module1 = Extension('{0:s}',".format(extname),
+"    sources = ['lex.yy.c'],",
+"    extra_compile_args = ['-DPYTHON_EXTENSION'])",
+'',
+"setup (name = '{0:s}',".format(extname),
+"       version = '1.0',",
+"       description = 'A flex lexer as a Python extension.',",
+"       ext_modules = [module1])",
+'',
+    ]))
 
 processArgs()
 
@@ -224,3 +240,7 @@ with open(args.filename) as fin:
             else:
                 fout.write(ln)
             
+if args.setup:
+    with open('setup.py', 'w') as fout:
+        put_setup(fout, args.extensionname)
+    

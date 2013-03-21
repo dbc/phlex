@@ -3,3 +3,4 @@
 *.l
 lex.yy.c
 lex.yy.o
+examples/*/setup.py
