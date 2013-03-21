@@ -1,8 +1,0 @@
---- lex.yy.c.old	2013-03-20 20:35:54.000000000 -0700
-+++ lex.yy.c	2013-03-20 20:36:57.000000000 -0700
-@@ -1,4 +1,4 @@
--
-+#include <Python.h>
- #line 3 "lex.yy.c"
- 
- #define  YY_INT_ALIGNED short int
