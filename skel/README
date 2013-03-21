@@ -2,13 +2,40 @@ Python C extensions require that
 #include <Python.h>
 occur in the source prior to any system includes. 
 The simplest way to accomplish that in flex is to
-patch the flex.skl skeleton file.  The skeleton 
-here is a copy of the flex.skl file in the sources
-for flex version 2.5.35, with a simple one line
-patch that inserts the #include in a convenient
-location.
+patch the flex.skl skeleton file and rebuild
+flex.
 
-To use this skeleton in your build, copy it to
-a convenient location and use the --skel option 
-to override flex's built-in skeleton.
+The skeleton here is a copy of the flex.skl file 
+in the sources for flex version 2.5.35, with a 
+simple three line patch that inserts the 
+#include in a convenient location under the
+control of
+#ifdef PYTHON_EXTENSION
 
+The file flex.skl.patch can be applied to
+flex 2.5.35 sources to produce the version
+of flex.skl here. flex.skl is included mainly
+for reference. 
+
+THIS IS A VERY MINIMAL AND CHEEZY PATCH.
+
+The right way to accomplish this goal would be
+to pass a command line option down from flex's
+argument processor all the way into the 
+skeleton generation switches.  This patch
+simply guards the #include under a #ifdef
+that should be benign in normal circumstances.
+
+To build yourself a new, quick-and-dirty flex
+to test out flex lexers as C extensions, the
+recipe is:
+
+____ Grab some sources for flex 2.5.35 or
+     a reasonable facsimile.
+____ Apply flex.skl.patch
+____ Build yourself a new flex using the
+     normal autotools incantations.
+
+The resulting lex.yy.c files will need to be
+compiled with -DPYTHON_EXTENSION in order
+to trigger the necessary #include.

@@ -4,3 +4,4 @@
 lex.yy.c
 lex.yy.o
 examples/*/setup.py
+examples/*/build

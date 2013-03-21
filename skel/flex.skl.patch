@@ -1,0 +1,15 @@
+diff --git a/flex.skl b/flex.skl
+index aebf2ae..6406d35 100644
+--- a/flex.skl
++++ b/flex.skl
+@@ -193,6 +193,10 @@ m4_ifdef( [[M4_YY_TABLES_EXTERNAL]],
+     M4_GEN_PREFIX(`TABLES_NAME')
+ ]])
+ 
++#ifdef PYTHON_EXTENSION
++#include <Python.h>
++#endif
++
+ /* First, we deal with  platform-specific or compiler-specific issues. */
+ 
+ /* begin standard C headers. */
