@@ -1,9 +1,35 @@
 %{
 @PLY_HOOKS_DECL@ 
+PyObject* specfilter(char *c);
 %}
-
+ALPHA [a-zA-Z_]
+ALPHANUM [a-zA-Z_0-9]
+DIG [0-9]
+SPEC [-()+(/=]
 %%
+{ALPHA}{ALPHANUM}*	{glexpos += strlen(yytext); return TOK_S("NAME",yytext); }
+{DIG}+			{glexpos += strlen(yytext); return TOK_L("NUMBER",atol(yytext)); }
+{SPEC}			{glexpos++; return specfilter(yytext); }
+\n			{glineno++; glexpos++; }
+.			{glexpos++;}
 %%
 @PLY_HOOKS_PROC@
 
+PyObject*
+specfilter(char *c)
+{
+    char *name;
+    switch (c[0]) {
+    case '(':
+        name = "LPAREN";
+        break;
+    }
+    return TOK_S(name, c);
+}
+
 @YYWRAP@
+
+/* Notes:
+   * Updating glexpos before calling buildToken() means that lexpos points
+     to the end, not the start of the token.
+*/

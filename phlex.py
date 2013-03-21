@@ -45,7 +45,6 @@ def put_decls(f, trigger):
     f.write('/* From phlex ' + trigger + ' */\n')
     f.write(
 '''#define YY_DECL static PyObject* yylex (void)
-static PyObject *mod; /* Points to the module providing Class LexToken(object). */
 static PyObject *token_cls; /* Caches lookup of the Class LexToken(object). */
 static PyObject *buildToken(long lineno, long lexpos, char *tokentype,
     char *format, ...);
@@ -69,29 +68,6 @@ static long glexpos = 0;
 
 def put_funcs(f, trigger, extName, tokenModule):
     f.write('/* From phlex ' + trigger + ' */\n');
-    f.write('\n'.join([
-'/* Declare the method table for the lexer class.*/',
-'static PyMethodDef {0:s}Methods[] = '.format(extName) + '{',
-'    {"lex", yylex_wrapped, METH_NOARGS, "Return one LexToken per call."}',
-'    {"yyin_init", yyin_init, METH_VARARGS,',
-'        "Initialize yyin from the file descriptor of an open file."}',
-'    { NULL, NULL, 0, NULL}\n}\n',
-'',
-'/* Extension module initialization. */',
-'PyMODINIT_FUNC\ninit{0:s}(void)'.format(extName),
-'{',
-'    (void) Py_InitModule("{0:s}", {0:s}Methods);'.format(extName),
-'    /* Capture a pointer to the LexToken class. */',
-'    PyObject *fromlist;',
-'    PyObject *mod; /* Module that provides Class LexToken(object) */',
-'    fromlist = PyBuildValue("[s]","LexToken");',
-'    mod = PyImport_ImportModuleEx("{0:s}", NULL, NULL, fromlist);\n'.
-        format(tokenModule),
-'    token_cls = PyObject_GetAttrStr(mod, "LexToken")',
-'    Py_DECREF(fromlist);',
-'}',
-'\n\n',
-    ]))
     
     f.write(
 '''/* Python always passes parameters to extensions, but yylex is 
@@ -102,7 +78,51 @@ static PyObject *yylex_wrapped(PyObject *self, PyObject *args)
 }
 
 '''
-)
+    )
+
+    f.write(
+'''static PyObject *yyin_init(PyObject *self, PyObject *args)
+{
+    /* yyin_init takes a single integer argument that is a 
+       file descriptor to a file that has already been opened
+       by the calling Python code. */
+    int fd;
+    FILE *infile;
+    if (!PyArg_ParseTuple(args, "i", &fd))
+        return NULL;
+    infile = fdopen(fd, "r");
+    if (!infile)
+        return NULL;
+    yyin = infile;
+    Py_RETURN_NONE;
+}
+
+''')
+
+    f.write('\n'.join([
+'/* Declare the method table for the lexer class.*/',
+'static PyMethodDef {0:s}Methods[] = '.format(extName) + '{',
+'    {"lex", yylex_wrapped, METH_NOARGS, "Return one LexToken per call."},',
+'    {"yyin_init", yyin_init, METH_VARARGS,',
+'        "Initialize yyin from the file descriptor of an open file."},',
+'    { NULL, NULL, 0, NULL},\n};\n',
+'',
+'/* Extension module initialization. */',
+'PyMODINIT_FUNC\ninit{0:s}(void)'.format(extName),
+'{',
+'    (void) Py_InitModule("{0:s}", {0:s}Methods);'.format(extName),
+'    /* Capture a pointer to the LexToken class. */',
+'    PyObject *fromlist;',
+'    PyObject *mod; /* Module that provides Class LexToken(object) */',
+'    fromlist = Py_BuildValue("[s]","LexToken");',
+'    mod = PyImport_ImportModuleLevel("{0:s}", NULL, NULL, fromlist,-1);'.
+        format(tokenModule),
+'    token_cls = PyObject_GetAttrString(mod, "LexToken");',
+'    Py_DECREF(fromlist);',
+'}',
+'\n\n',
+    ]))
+    
 
     f.write(
 '''static PyObject *buildToken(long lineno, long lexpos, char *tokentype,
@@ -153,7 +173,7 @@ static PyObject *yylex_wrapped(PyObject *self, PyObject *args)
         va_start(argp, format);
         po_value = Py_VaBuildValue(format, argp);
         if (po_value == NULL) goto error;
-        va_end(argp)
+        va_end(argp);
     }
     
     /* Set the token attributes in the instance of tok. */
@@ -181,29 +201,11 @@ error:
 
 ''')
 
-    f.write(
-'''static PyObject *yyin_init(PyObject *self, PyObject *args)
-{
-    /* yyin_init takes a single integer argument that is a 
-       file descriptor to a file that has already been opened
-       by the calling Python code. */
-    int fd;
-    FILE infile;
-    if (!PyArg_ParseTuple(args, "i", &fd))
-        return NULL;
-    infile = fdopen(fd, "r");
-    if (!infile)
-        return NULL;
-    yyin = infile;
-    Py_RETURN_NONE;
-}
-
-''')
     f.write('/* End phlex */\n')
 
 def put_yywrap(f, trigger):
     f.write('/* From phlex ' + trigger + ' */\n');
-    f.write('int yywrap() {return 1}\n/* End phlex */\n')
+    f.write('int yywrap() {return 1;}\n/* End phlex */\n')
     
 
 processArgs()
