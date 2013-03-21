@@ -1,0 +1,50 @@
+phlex reads a lexerspec.l.in file, and produces a lexerspec.l 
+file.  Three triggers cause phlex to insert code into
+lexerspec.l, otherwise a .l.in is just a normal .l file.
+
+@PLY_HOOKS_DECL@
+pulls in declarations.  It goes inside the %{ %}
+in section 1 of your lexer.
+
+@PLY_HOOKS_PROC@
+pulls in functions that implement the Python extension
+interface, and goes in section 3.
+
+The optional 
+@YYWRAP@
+pulls in a yywrap() convenience function. 
+
+How-To checklist:
+____ include @PLY_HOOKS_DECL@ inside the %{ %} of
+     section 1.
+____ include @PLY_HOOKS_PROC@ someplace in section 3.
+____ Your functions in section 3 SHOULD be declared
+     static so that they are not exposed outside of
+     the Python C extension that will eventually
+     be generated.
+____ Write lexical rules and actions:
+     ____ Use the function buildToken to construct Python
+          instances of the LexToken class.  The TOK_x
+          convenience macros simplify this task.
+     ____ You get to keep up glineno and glexpos yourself
+          in your rules.
+____ Process the .l.in file through phlex
+     ____ -e <extensionname> is required to set the
+          name of the extension in Python name space.
+     ____ -m <modulename> is optional, and defaults
+          to ply.lex.  This is where the lexer will
+          look to find the definition of LexToken.
+     ____ --setup will generate a setup.py file 
+____ run your PATCHED flex on the resulting .l file.
+     * see skel/README for how/why to patch flex.
+____ run python setup.py build 
+____ Enjoy your flex lexer.
+     ____ import yourextension
+     ____ set up a file to parse:
+          f = open('somefile','r')
+          yourextension.yyin_init(f.fileno()) 
+     ____ call yourextension.lex() a whole bunch
+          of times, getting a LexToken back
+          every time until EOF, in which case you
+          get None.
+
