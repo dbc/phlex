@@ -1,5 +1,6 @@
 Simple test of phlex.  Intended to be a drop-in replacement
-for the lexer in Dave Beazley's calc example.  
+for the lexer in Dave Beazley's calc example for the ply
+module.  
 
 To build and test calclex:
 ____ ../../phlex.py --setup -e calclex calc.l.in
