@@ -1,0 +1,14 @@
+Python C extensions require that 
+#include <Python.h>
+occur in the source prior to any system includes. 
+The simplest way to accomplish that in flex is to
+patch the flex.skl skeleton file.  The skeleton 
+here is a copy of the flex.skl file in the sources
+for flex version 2.5.35, with a simple one line
+patch that inserts the #include in a convenient
+location.
+
+To use this skeleton in your build, copy it to
+a convenient location and use the --skel option 
+to override flex's built-in skeleton.
+
