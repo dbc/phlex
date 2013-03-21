@@ -1,26 +1,13 @@
 #!/usr/bin/env python
+# A pre-processor for flex .l files that wraps the resulting lexer
+# as a Python C Extension.
 
-# DONE Add argument processing and a main.
-# DONE yylex takes a (void) parameter Tuple, so probably need a
-#       wrapper to keep the compiler happy so can throw away
-#       the incoming parameter list?
-#       --> NO! METH_NOARGS
-# DONE Change the import in module init.
+# To do list:
 # ____ Does the imported module need to be reference counted?
-# DONE Handle EOF same way as ply lexer.
-# DONE Implement yyin_init -- need fdopen()
 # ____ Doc note: User-defined functions in section 3 should be
 #        declared static so that they are not exposed to the linker
 #        in order to conform to Python C extension conventions.
-# DONE Consider re-writing buildToken to be a Py_Builder pass-through
-#        to simplify user calls.  Or to make a builder-style call a
-#        wrapper around the lower level function.
-#        buildToken(lineno, lexpos, tokentype, format, ...)
-#        TOK(N)  TOK_I(N,I) TOK_S(N,S) TOK_C(N,C)
-#        format == "" is no value
-#        format != "" is passed directly to Py_VaBuildValue
-# DONE Is it necessary to #include <stdarg.h> or is it already there?
-#        not necessary.
+
 import argparse
 
 def processArgs():
