@@ -2,6 +2,8 @@
 # A pre-processor for flex .l files that wraps the resulting lexer
 # as a Python C Extension.
 
+# Copyright 2013 David B. Curtis
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
