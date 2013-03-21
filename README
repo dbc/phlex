@@ -1,0 +1,40 @@
+phlex is a simple pre-processor for flex .l files that
+inserts code to wrap the lexer as a Python C extension.
+
+phlex.py reads foo.l.in producing foo.l, which can
+then be processed through flex in the normal way
+using a flex.skl skeletion file which has a one-line
+patch.  The resulting lex.yy.c then builds into a
+Python C extension.  See the doc directory for complete
+documentation.
+
+OK, why?  The original motivation for phlex was
+to provide an easy way to use flex-based lexers
+with Dave Beazley's ply module for Python,
+which provides lex/yacc work-alike functionality
+in a pure-Python environment.  The lexer in ply,
+however, depends on the Python re module which 
+implies that the entire source must be read into
+memory as a single string.  In it's original deployment
+as a tool for teaching compiler classes, this is 
+perfectly sufficient.  In a production environment,
+however, there are two key limitiations.  The first is
+the obvious memory performance limitations imposed
+by the requirement of having the entire source
+file resident in memory.  It also means that 
+interactive lexers, or reading from an internet
+socket are not possible.  In addition to these
+limitations, re simply isn't as fast as a
+flex lexer.
+
+phlex is a very simple script, and I consider
+it a proof-of-concept vehicle.  Ideally, the
+functionality in phlex would someday be part of
+flex's native functionality.  I see phlex as a
+way to inexpensively test the idea.
+
+phlex is licensed under the GPL V3 or later,
+see the LICENSE file for more information.
+
+Dave Curtis - 20-March-2013
+

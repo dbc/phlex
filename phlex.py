@@ -8,17 +8,18 @@
 # DONE Change the import in module init.
 # ____ Does the imported module need to be reference counted?
 # DONE Handle EOF same way as ply lexer.
-# ____ Implement yyin_init -- need fdopen()
+# DONE Implement yyin_init -- need fdopen()
 # ____ Doc note: User-defined functions in section 3 should be
 #        declared static so that they are not exposed to the linker
 #        in order to conform to Python C extension conventions.
-# ____ Consider re-writing buildToken to be a Py_Builder pass-through
+# DONE Consider re-writing buildToken to be a Py_Builder pass-through
 #        to simplify user calls.  Or to make a builder-style call a
 #        wrapper around the lower level function.
 #        buildToken(lineno, lexpos, tokentype, format, ...)
 #        TOK(N)  TOK_I(N,I) TOK_S(N,S) TOK_C(N,C)
 #        format == "" is no value
 #        format != "" is passed directly to Py_VaBuildValue
+# ____ Is it necessary to #include <stdarg.h> or is it already there?
 
 import argparse
 
@@ -46,11 +47,16 @@ def put_decls(f, trigger):
 '''#define YY_DECL static PyObject* yylex (void)
 static PyObject *mod; /* Points to the module providing Class LexToken(object). */
 static PyObject *token_cls; /* Caches lookup of the Class LexToken(object). */
-PyObject *buildToken(char *tokentype, int hasval, PyObject *value, int lineno, int lexpos);
+static PyObject *buildToken(long lineno, long lexpos, char *tokentype,
+    char *format, ...);
 static long glineno = 0;
 static long glexpos = 0;
-#define PHTOK(T) buildToken((T), 0, NULL, glineno, glexpos)
-#define PHTOKV(T,V) buildToken((T), 1, (V), glineno, glexpos)
+#define TOK(N) buildToken(glineno, glexpos, N, NULL)
+#define TOK_L(N,L) buildToken(glineno, glexpos, N, "l", L)
+#define TOK_S(N,S) buildToken(glineno, glexpos, N, "s", S)
+#define TOK_C(N,C) buildToken(glineno, glexpos, N, "c", C)
+#define TOK_D(N,D) buildToken(glineno, glexpos, N, "d", D)
+#define TOK_EOF buildToken(glineno, glexpos, NULL, NULL)
 /* End phlex */
 
 ''')
@@ -68,11 +74,11 @@ def put_funcs(f, trigger, extName, tokenModule):
 'static PyMethodDef {0:s}Methods[] = '.format(extName) + '{',
 '    {"lex", yylex_wrapped, METH_NOARGS, "Return one LexToken per call."}',
 '    {"yyin_init", yyin_init, METH_VARARGS,',
-'        "Initialize yyin from open Python file."}',
+'        "Initialize yyin from the file descriptor of an open file."}',
 '    { NULL, NULL, 0, NULL}\n}\n',
 '',
 '/* Extension module initialization. */',
-'PyMODINIT_FUNC\ninit{0:s}(void)\n'.format(extName),
+'PyMODINIT_FUNC\ninit{0:s}(void)'.format(extName),
 '{',
 '    (void) Py_InitModule("{0:s}", {0:s}Methods);'.format(extName),
 '    /* Capture a pointer to the LexToken class. */',
@@ -84,30 +90,31 @@ def put_funcs(f, trigger, extName, tokenModule):
 '    token_cls = PyObject_GetAttrStr(mod, "LexToken")',
 '    Py_DECREF(fromlist);',
 '}',
+'\n\n',
     ]))
     
     f.write(
-'''/* Python calls with parameters, yylex is parameterless, so
-   yylex_wrapped() simply ignores the parameters. */
+'''/* Python always passes parameters to extensions, but yylex is 
+   parameterless, so yylex_wrapped() simply ignores the parameters. */
 static PyObject *yylex_wrapped(PyObject *self, PyObject *args)
 {
     return yylex();
 }
+
 '''
 )
 
     f.write(
-'''static PyObject *buildToken(char *tokentype, int hasval, PyObject *value,
-    long lineno, long lexpos)
+'''static PyObject *buildToken(long lineno, long lexpos, char *tokentype,
+    char *format, ...)
 {
-    /* Build an instance of LexToken and return a pointer to it, or NULL.
-       If hasval is non-zero, value must be non-NULL and point to a PyObject.
-       if hasval is zero, the value attr of the LexToken instance is set to
-       be the same as tokentype.  If hasval is false, value MUST be NULL.
-       If tokentype is NULL, then buildToken returns a Py_None instance to
-       indicate end-of-file to the calling parser. 
-       Note that the object reference owned by the *value parameter
-       is "stolen" by this function! */
+    /* Build an instance of LexToken and return a PyObject pointer to it, 
+       or return NULL on error.  If tokentype is NULL, then buildToken 
+       returns a Py_None instance as the end-of-file indicator.
+       If format is NULL, then the token value is set to be the same as
+       tokentype.  If format is non-NULL, it is passed directly to 
+       Py_VaBuildValue() along with any subsequent varargs, and the 
+       result becomes the token value. */
 
     /* Maintainer note: Be sure to init all temporary PyObject pointers to NULL
        because the error exit code simply calls PyXDECREF() on world+dog. */
@@ -118,47 +125,47 @@ static PyObject *yylex_wrapped(PyObject *self, PyObject *args)
     PyObject *po_tokentype = NULL;
     PyObject *po_lineno = NULL;
     PyObject *po_lexpos = NULL;
+    PyObject *po_value = NULL;
+    va_list argp;
     
-    /* Handle the end-of-file case. Note early-out return. */
+    /* Handle the end-of-file case as an early-out, returning None. */
     if (tokentype == NULL)
     {
-        tok = Py_None;
-        Py_INCREF(tok);
-        return tok;
+        Py_RETURN_NONE;
     }
     
     /* Create an instance of LexToken. */
     if ((tok = PyObject_CallFunctionObjArgs(token_cls,NULL)) == NULL) goto error;
     
-    /* Create Python object instances for token values. */
+    /* Create Python object instances for token attributes. */
     if ((po_tokentype = PyString_FromString(tokentype)) == NULL) goto error;
     if ((po_lineno = PyInt_FromLong(lineno)) == NULL) goto error;
     if ((po_lexpos = PyInt_FromLong(lexpos)) == NULL) goto error;
 
-    /* If !hasval, then set value to be the same as tokentype. */
-    if (hasval == 0)
+    /* If format is NULL, then set value to be the same as tokentype. */
+    if (format == NULL)
     {
-        value = po_tokentype;
-        Py_INCREF(value);
+        po_value = po_tokentype;
+        Py_INCREF(po_value);
     }
     else
     {
-        /* When value == NULL, we assume that the user's Py<builder> call
-           failed and returned NULL, so we handle that error here. */
-        if (value == NULL) goto error;
+        va_start(argp, format);
+        po_value = Py_VaBuildValue(format, argp);
+        if (po_value == NULL) goto error;
+        va_end(argp)
     }
     
     /* Set the token attributes in the instance of tok. */
     if (PyObject_SetAttrString (tok, "type", po_tokentype) < 0) goto error;
-    if (PyObject_SetAttrString (tok, "value", value) < 0) goto error;
+    if (PyObject_SetAttrString (tok, "value", po_value) < 0) goto error;
     if (PyObject_SetAttrString (tok, "lineno", po_lineno) < 0) goto error;
     if (PyObject_SetAttrString (tok, "lexpos", po_lexpos) < 0) goto error;
 
     /* Phew! Done.
        Note that ownership of the reference we are holding to tok gets
        passed to the caller.  Ownership of the references po_tokentype,
-       po_lineno, and po_lexpos were given to tok.  The reference owned
-       by the incoming parameter "value" is was given to tok. */
+       po_value, po_lineno, and po_lexpos were given to tok. */
     return tok;
     
 error:
@@ -166,19 +173,32 @@ error:
     Py_XDECREF(po_lexpos);
     Py_XDECREF(po_lineno);
     Py_XDECREF(po_tokentype);
-    Py_XDECREF(value); /* We promise to steal it, so on failure we eat it. */
+    Py_XDECREF(po_value);
     Py_XDECREF(tok);
     
     return NULL;
 }
+
 ''')
 
-    f.write('\n'.join([
-'static PyObject *yyin_init(PyObject *self, PyObject *args)',
-'{',
-'}',
-'\n\n',
-    ]))
+    f.write(
+'''static PyObject *yyin_init(PyObject *self, PyObject *args)
+{
+    /* yyin_init takes a single integer argument that is a 
+       file descriptor to a file that has already been opened
+       by the calling Python code. */
+    int fd;
+    FILE infile;
+    if (!PyArg_ParseTuple(args, "i", &fd))
+        return NULL;
+    infile = fdopen(fd, "r");
+    if (!infile)
+        return NULL;
+    yyin = infile;
+    Py_RETURN_NONE;
+}
+
+''')
     f.write('/* End phlex */\n')
 
 def put_yywrap(f, trigger):
