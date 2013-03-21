@@ -19,8 +19,8 @@
 #        TOK(N)  TOK_I(N,I) TOK_S(N,S) TOK_C(N,C)
 #        format == "" is no value
 #        format != "" is passed directly to Py_VaBuildValue
-# ____ Is it necessary to #include <stdarg.h> or is it already there?
-
+# DONE Is it necessary to #include <stdarg.h> or is it already there?
+#        not necessary.
 import argparse
 
 def processArgs():
