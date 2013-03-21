@@ -37,6 +37,10 @@ ____ Process the .l.in file through phlex
      ____ --setup will generate a setup.py file 
 ____ run your PATCHED flex on the resulting .l file.
      * see skel/README for how/why to patch flex.
+     ____ Alternatively, you can run a stock version
+          of flex, and then add the line:
+          #include <Python.h> 
+          at the top of lex.yy.c before building.
 ____ run python setup.py build 
 ____ Enjoy your flex lexer.
      ____ import yourextension
