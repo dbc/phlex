@@ -33,10 +33,10 @@ it a proof-of-concept vehicle.  Ideally, the
 functionality in phlex would someday be part of
 flex's native functionality.  I see phlex as a
 way to inexpensively test the idea before
-goint crazy patching flex.
+going crazy patching flex.
 
 phlex is licensed under the GPL V3 or later,
-see the LICENSE file for more information.
+see the COPYING file for more information.
 
 Dave Curtis - 20-March-2013
 
